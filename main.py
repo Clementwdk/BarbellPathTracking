@@ -1,9 +1,8 @@
-from imutils.video import videostream
-from imutils.video import FPS
 import time
 import cv2
 import imutils
 import numpy as np
+import matplotlib.pyplot as plt
 
 video = cv2.VideoCapture('Snatch.mp4')
 
@@ -13,6 +12,8 @@ video = cv2.VideoCapture('Snatch.mp4')
 # print(str(video.get(3)))
 
 
+
+
 success, img = video.read()
 #img = imutils.resize(img, width=640, height=480)
 boundBox = cv2.selectROI("Tracking, ", img, fromCenter=False, showCrosshair=True)
@@ -20,6 +21,7 @@ tracker = cv2.legacy.TrackerMOSSE_create()
 tracker.init(img, boundBox)
 barbellPath = []
 yhigh = []
+xhigh = []
 t_start =time.time()
 
 
@@ -59,8 +61,11 @@ while True:
     cv2.line(img, (100,541), (400,541), (24,175,55), 10)
 
     barbellPath.append([int(boundBox[0]+(boundBox[2]/2)),int(boundBox[1]+boundBox[3]/2)])
+    yhigh.append(boundBox[0])
 
-    yhigh.append(boundBox[1])
+    if boundBox[1] > 0 and boundBox[0] > 0:
+        xhigh.append(boundBox[1])
+
     velocity = getVelocity(yhigh,int(boundBox[3]),timeElapsed)
 
 
@@ -73,6 +78,11 @@ while True:
     cv2.putText(img, "Time : {0:.2f} ".format(timeElapsed), (75, 80), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (76,76,76), 2)
     cv2.putText(img, "FPS : {0:.2f} s".format(message), (75, 60), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (76,76,76), 2)
     cv2.putText(img, "Speed : {0:.2f} m/s".format(velocity), (75, 100), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (76,76,76), 2)
+
+    sec = []
+    speed = []
+    sec.append(timeElapsed)
+    speed.append(velocity)
 
     drawPath(img, barbellPath)
     if key == ord('p'):
@@ -88,4 +98,18 @@ while True:
 
 video.release()
 cv2.destroyAllWindows()
-print("finish")
+
+# #plotting
+# plt.title("Athletes movement")
+# plt.xlabel("Xsss")
+# plt.ylabel("Ycsssss")
+# plt.xticks(rotation=90)
+# plt.plot(xhigh, yhigh, color ="red")
+#plot speed
+plt.title("Speed / sec")
+plt.xlabel("sec")
+plt.ylabel("M/S")
+plt.xticks(rotation=90)
+plt.plot(sec, speed, color ="red")
+
+plt.show()
