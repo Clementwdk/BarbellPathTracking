@@ -23,6 +23,8 @@ barbellPath = []
 yhigh = []
 xhigh = []
 t_start =time.time()
+sec = []
+speed = []
 
 
 def trackBox(img, boundBox):
@@ -61,10 +63,9 @@ while True:
     cv2.line(img, (100,541), (400,541), (24,175,55), 10)
 
     barbellPath.append([int(boundBox[0]+(boundBox[2]/2)),int(boundBox[1]+boundBox[3]/2)])
-    yhigh.append(boundBox[0])
 
-    if boundBox[1] > 0 and boundBox[0] > 0:
-        xhigh.append(boundBox[1])
+    yhigh.append(boundBox[1])
+    xhigh.append(boundBox[0])
 
     velocity = getVelocity(yhigh,int(boundBox[3]),timeElapsed)
 
@@ -79,10 +80,9 @@ while True:
     cv2.putText(img, "FPS : {0:.2f} s".format(message), (75, 60), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (76,76,76), 2)
     cv2.putText(img, "Speed : {0:.2f} m/s".format(velocity), (75, 100), cv2.FONT_HERSHEY_TRIPLEX, 0.7, (76,76,76), 2)
 
-    sec = []
-    speed = []
-    sec.append(timeElapsed)
-    speed.append(velocity)
+    if velocity>0.5:
+        sec.append(timeElapsed)
+        speed.append(velocity)
 
     drawPath(img, barbellPath)
     if key == ord('p'):
@@ -100,16 +100,19 @@ video.release()
 cv2.destroyAllWindows()
 
 # #plotting
-# plt.title("Athletes movement")
-# plt.xlabel("Xsss")
-# plt.ylabel("Ycsssss")
-# plt.xticks(rotation=90)
-# plt.plot(xhigh, yhigh, color ="red")
+plt.plot(2,1,1)
+plt.title("Athletes movement")
+plt.xlabel("Xsss")
+plt.ylabel("Ycsssss")
+plt.xticks(rotation=180)
+plt.plot(xhigh, yhigh, color ="red")
+plt.show()
+
 #plot speed
+plt.subplot(2, 1, 2)
 plt.title("Speed / sec")
 plt.xlabel("sec")
 plt.ylabel("M/S")
-plt.xticks(rotation=90)
-plt.plot(sec, speed, color ="red")
+plt.plot(sec, speed, 'blue')
 
 plt.show()
