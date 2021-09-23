@@ -1,21 +1,16 @@
+import random
 import time
 import cv2
-import imutils
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pyautogui
+import mediapipe as mp
+import os
 
-video = cv2.VideoCapture('Snatch.mp4')
-
-#Settings  to modify the window size -> Fail
-# video.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-# video.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-# print(str(video.get(3)))
-
-
+video = cv2.VideoCapture('videos/7.mp4')
 
 
 success, img = video.read()
-#img = imutils.resize(img, width=640, height=480)
 boundBox = cv2.selectROI("Tracking, ", img, fromCenter=False, showCrosshair=True)
 tracker = cv2.legacy.TrackerMOSSE_create()
 tracker.init(img, boundBox)
@@ -25,6 +20,7 @@ xhigh = []
 t_start =time.time()
 sec = []
 speed = []
+# img = cv2.resize(img, (640, 480))
 
 
 def trackBox(img, boundBox):
@@ -46,21 +42,68 @@ def getVelocity(yhigh, heightBb, timeElapsed):
         distcm = ((ymax-ymin)/heightBb)*45
     except:
         distcm = 0
-    # print(ymin, ymax, heightBb)
-    # print("dist"+str(distcm))
     return distcm/timeElapsed
+
+def takeScreenshot():
+    x= random.randrange(99999)
+    image = pyautogui.screenshot()
+    image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    cv2.imwrite("ScreenShot/pic_"+str(x)+".png", image)
+
+def bodyPose(pathPics):
+    mpDraw = mp.solutions.drawing_utils
+    mpPose = mp.solutions.pose
+    pose = mpPose.Pose(static_image_mode=True,
+                       model_complexity=1,
+                       smooth_landmarks=True,
+                       enable_segmentation=False,
+                       smooth_segmentation=True,
+                       min_detection_confidence=0.7,
+                       min_tracking_confidence=0.7)
+    img = cv2.imread(pathPics)
+    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    results = pose.process(imgRGB)
+    if results.pose_landmarks:
+        mpDraw.draw_landmarks(img, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
+        for id, lm in enumerate(results.pose_landmarks.landmark):
+            h, w, c = img.shape
+            #print(id)
+            # pixel value
+            cx, cy = int(lm.x * w), int(lm.y * h)
+            if True:
+                cv2.circle(img, (cx, cy), 5, (0, 0, 255), cv2.FILLED)
+
+    cv2.imshow("Image", img)
+    cv2.waitKey(0)
+
+def printBodypos():
+    path = 'ScreenShot'
+    picfiles = [f for f in os.listdir(path) if f.endswith('.png')]
+    if not picfiles:
+        print("No Screen shot taken")
+    else:
+        for x in picfiles:
+            bodyPose(path + '/' + x)
+
+def deleteScreenShot():
+    dir_name = "ScreenShot"
+    test = os.listdir(dir_name)
+
+    for item in test:
+        if item.endswith(".png"):
+            os.remove(os.path.join(dir_name, item))
 
 if ( video.isOpened()== False):
     print("Error with the video file")
 
+
 while True:
+
     timer = cv2.getTickCount()
     key = cv2.waitKey(1)
     success, img = video.read()
     success, boundBox = tracker.update(img)
     timeElapsed=time.time() - t_start
-    cv2.line(img, (100,8), (400,8), (212,175,55), 10)
-    cv2.line(img, (100,541), (400,541), (24,175,55), 10)
 
     barbellPath.append([int(boundBox[0]+(boundBox[2]/2)),int(boundBox[1]+boundBox[3]/2)])
 
@@ -85,8 +128,13 @@ while True:
         speed.append(velocity)
 
     drawPath(img, barbellPath)
+
+    if cv2.waitKey(25) & key == ord('s'):
+        cv2.waitKey(-1)
+        takeScreenshot()
+        print("ScreeShot taken")
+
     if key == ord('p'):
-        time.sleep(2)
         cv2.waitKey(-1)
 
     if cv2.waitKey(25) & key == ord('q'):
@@ -106,6 +154,7 @@ plt.xlabel("Xsss")
 plt.ylabel("Ycsssss")
 plt.xticks(rotation=180)
 plt.plot(xhigh, yhigh, color ="red")
+plt.gca().invert_yaxis()
 plt.show()
 
 #plot speed
@@ -114,5 +163,7 @@ plt.title("Speed / sec")
 plt.xlabel("sec")
 plt.ylabel("M/S")
 plt.plot(sec, speed, 'blue')
-
 plt.show()
+
+printBodypos()
+deleteScreenShot()
